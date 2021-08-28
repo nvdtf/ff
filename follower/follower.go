@@ -3,6 +3,7 @@ package follower
 import (
 	"context"
 	"fmt"
+	"tehranifar/fflow/storage"
 	"time"
 
 	"github.com/onflow/flow-go-sdk"
@@ -12,12 +13,13 @@ import (
 const blockTime = 3 * time.Second
 
 type Follower struct {
-	ctx    context.Context
-	client *flowClient.Client
+	ctx     context.Context
+	client  *flowClient.Client
+	storage storage.Provider
 }
 
-func New(ctx context.Context, client *flowClient.Client) Follower {
-	return Follower{ctx, client}
+func New(ctx context.Context, client *flowClient.Client, storage storage.Provider) Follower {
+	return Follower{ctx, client, storage}
 }
 
 func (f *Follower) Follow(block *flow.Block) error {
@@ -59,11 +61,27 @@ func (f *Follower) processBlock(ctx context.Context, block *flow.Block) error {
 			return err
 		}
 		for _, txID := range col.TransactionIDs {
-			_, err := f.client.GetTransaction(ctx, txID)
+			txRes, err := f.client.GetTransactionResult(ctx, txID)
 			if err != nil {
 				return err
 			}
-			// fmt.Println(tx.ID().Hex())
+
+			tx, err := f.client.GetTransaction(ctx, txID)
+			if err != nil {
+				return err
+			}
+
+			txError := ""
+			if txRes.Error != nil {
+				txError = txRes.Error.Error()
+			}
+
+			f.storage.Save(&storage.Transaction{
+				Tx:    txID.String(),
+				Code:  string(tx.Script),
+				Error: txError,
+			})
+
 		}
 	}
 

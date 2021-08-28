@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"tehranifar/fflow/follower"
+	"tehranifar/fflow/storage"
 
 	flowClient "github.com/onflow/flow-go-sdk/client"
 	"google.golang.org/grpc"
@@ -14,17 +15,21 @@ import (
 // TODO LIST
 // ---------
 //
-// - store transactions with gorm
-// - test run locally with sqlite
-// - deploy
 //
-// - store imports
-//
+// - regex imports
+// - check imports against known list of contracts to watch
 // - figure out proper metrics
+// - implement metrics
+// - deploy
 // - set up grafana to show metrics
 
 func main() {
 	ctx := context.Background()
+
+	storage, err := storage.NewSqliteStorage()
+	if err != nil {
+		panic(err)
+	}
 
 	client, err := flowClient.New("access.mainnet.nodes.onflow.org:9000", grpc.WithInsecure())
 	if err != nil {
@@ -36,7 +41,7 @@ func main() {
 		panic(err)
 	}
 
-	f := follower.New(ctx, client)
+	f := follower.New(ctx, client, storage)
 	go f.Follow(startBlock)
 
 	http.Handle("/metrics", promhttp.Handler())
