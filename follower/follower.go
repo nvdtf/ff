@@ -3,7 +3,9 @@ package follower
 import (
 	"context"
 	"fmt"
+	"strings"
 	"tehranifar/fflow/storage"
+	"tehranifar/fflow/tags"
 	"time"
 
 	"github.com/onflow/flow-go-sdk"
@@ -11,6 +13,7 @@ import (
 )
 
 const blockTime = 3 * time.Second
+const retryInterval = 1 * time.Second
 
 type Follower struct {
 	ctx     context.Context
@@ -27,26 +30,26 @@ func (f *Follower) Follow(block *flow.Block) error {
 	for {
 		time.Sleep(blockTime)
 
-		currentBlock, err := f.client.GetLatestBlock(f.ctx, true)
-		if err != nil {
+		var currentBlock *flow.Block
+		try(func() error {
+			var err error
+			currentBlock, err = f.client.GetLatestBlock(f.ctx, true)
 			return err
-		}
+		})
 
 		currentHeight := currentBlock.Height
 
-		fmt.Println(fmt.Sprintf("Latest block height: %d", currentBlock.Height))
-
 		for h := currentBlock.Height; h > height; h-- {
 			fmt.Println(fmt.Sprintf("Processing block height %d", currentBlock.Height))
-			err := f.processBlock(f.ctx, currentBlock)
-			if err != nil {
-				return err
-			}
+			try(func() error {
+				return f.processBlock(f.ctx, currentBlock)
+			})
 
-			currentBlock, err = f.client.GetBlockByHeight(f.ctx, h-1)
-			if err != nil {
+			try(func() error {
+				var err error
+				currentBlock, err = f.client.GetBlockByHeight(f.ctx, h-1)
 				return err
-			}
+			})
 		}
 
 		height = currentHeight
@@ -76,14 +79,34 @@ func (f *Follower) processBlock(ctx context.Context, block *flow.Block) error {
 				txError = txRes.Error.Error()
 			}
 
+			importTags := tags.ProcessImportTags(string(tx.Script))
+			for _, tag := range importTags {
+				failed := false
+				if txRes.Error != nil {
+					failed = true
+				}
+				RegisterTagMetrics(tag, failed)
+			}
+			dbTags := strings.Join(importTags, ",")
+
 			f.storage.Save(&storage.Transaction{
 				Tx:    txID.String(),
 				Code:  string(tx.Script),
 				Error: txError,
+				Tags:  dbTags,
 			})
 
 		}
 	}
 
 	return nil
+}
+
+func try(f func() error) {
+	err := f()
+	for err != nil {
+		fmt.Println(err)
+		time.Sleep(retryInterval)
+		err = f()
+	}
 }

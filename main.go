@@ -16,12 +16,9 @@ import (
 // ---------
 //
 //
-// - regex imports
-// - check imports against known list of contracts to watch
-// - figure out proper metrics
-// - implement metrics
-// - deploy
 // - set up grafana to show metrics
+// - event listener (from tx list)
+// - event metrics
 
 func main() {
 	ctx := context.Background()

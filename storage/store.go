@@ -19,6 +19,7 @@ type Transaction struct {
 	Tx    string
 	Code  string
 	Error string
+	Tags  string
 }
 
 func NewSqliteStorage() (Provider, error) {
