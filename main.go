@@ -17,6 +17,7 @@ import (
 //
 //
 // - fix client: rpc error: code = ResourceExhausted desc = grpc: received message larger than max (7902438 vs. 4194304)
+// - accessible postgres database
 // - event listener (from tx list) + metrics
 
 func main() {
