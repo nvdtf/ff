@@ -16,10 +16,11 @@ type Storage struct {
 type Transaction struct {
 	gorm.Model
 
-	Tx    string
-	Code  string
-	Error string
-	Tags  string
+	Authorizers string
+	Tx          string
+	Code        string
+	Error       string
+	ImportTags  string
 }
 
 func NewSqliteStorage() (Provider, error) {

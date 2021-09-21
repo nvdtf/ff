@@ -4,8 +4,7 @@ services:
   ff:
     build:
       context: ./
-      dockerfile: Dockerfile
-    container_name: ff    
+      dockerfile: Dockerfile    
     ports:
       - '2112:2112'
   
@@ -23,8 +22,7 @@ services:
       - 9090:9090
 
   grafana:  
-    image: grafana/grafana:latest
-    container_name: grafana
+    image: grafana/grafana:latest  
     ports:
       - "3000:3000"
     volumes:

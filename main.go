@@ -17,7 +17,6 @@ import (
 //
 //
 // - deploy to ec2
-// - more contracts
 // - create panels
 // - event listener (from tx list)
 // - event metrics

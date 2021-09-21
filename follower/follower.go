@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"tehranifar/fflow/storage"
-	"tehranifar/fflow/tags"
 	"time"
 
 	"github.com/onflow/flow-go-sdk"
@@ -75,25 +74,33 @@ func (f *Follower) processBlock(ctx context.Context, block *flow.Block) error {
 			}
 
 			txError := ""
+			failed := false
 			if txRes.Error != nil {
 				txError = txRes.Error.Error()
+				failed = true
 			}
 
-			importTags := tags.ProcessImportTags(string(tx.Script))
-			for _, tag := range importTags {
-				failed := false
-				if txRes.Error != nil {
-					failed = true
-				}
-				RegisterTagMetrics(tag, failed)
+			var tagList []string
+			CadenceImports := GetImports(string(tx.Script))
+			for _, imp := range CadenceImports {
+				RegisterImportMetrics(imp, failed)
+				tagList = append(tagList, imp.Contract)
+				tagList = append(tagList, imp.Address)
 			}
-			dbTags := strings.Join(importTags, ",")
+			dbImportTags := strings.Join(tagList, ",")
+
+			var authAddressList []string
+			for _, auth := range tx.Authorizers {
+				authAddressList = append(authAddressList, auth.String())
+			}
+			dbAuthorizer := strings.Join(authAddressList, ",")
 
 			f.storage.Save(&storage.Transaction{
-				Tx:    txID.String(),
-				Code:  string(tx.Script),
-				Error: txError,
-				Tags:  dbTags,
+				Authorizers: dbAuthorizer,
+				Tx:          txID.String(),
+				Code:        string(tx.Script),
+				Error:       txError,
+				ImportTags:  dbImportTags,
 			})
 
 		}

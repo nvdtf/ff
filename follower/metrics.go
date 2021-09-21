@@ -12,10 +12,10 @@ var (
 		Name: "import_tag_total",
 		Help: "The total number of observed known imports",
 	}, []string{
-		"contract", "failed",
+		"contract", "address", "failed",
 	})
 )
 
-func RegisterTagMetrics(contract string, failed bool) {
-	tagsObserved.WithLabelValues(contract, strconv.FormatBool(failed)).Inc()
+func RegisterImportMetrics(imp CadenceImport, failed bool) {
+	tagsObserved.WithLabelValues(imp.Contract, imp.Address, strconv.FormatBool(failed)).Inc()
 }
