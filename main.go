@@ -16,10 +16,8 @@ import (
 // ---------
 //
 //
-// - deploy to ec2
-// - create panels
-// - event listener (from tx list)
-// - event metrics
+// - fix client: rpc error: code = ResourceExhausted desc = grpc: received message larger than max (7902438 vs. 4194304)
+// - event listener (from tx list) + metrics
 
 func main() {
 	ctx := context.Background()
