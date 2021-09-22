@@ -1,2 +1,3 @@
-# ff - Flow Follow
+# ff
 
+Follows Flow, generates metrics and dumps transactions.
