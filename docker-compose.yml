@@ -7,6 +7,17 @@ services:
       dockerfile: Dockerfile    
     ports:
       - '2112:2112'
+
+  db:
+    image: postgres:13-alpine
+    environment:
+      - POSTGRES_DB=ff
+      - POSTGRES_USER=ff
+      - POSTGRES_PASSWORD=notsecure!notsecure!notsecure
+    ports:
+      - '5432:5432'
+    volumes:
+      - database-data:/var/lib/postgresql/data/
   
   prometheus:
     image: prom/prometheus:v2.30.0
@@ -24,10 +35,11 @@ services:
   grafana:  
     image: grafana/grafana:latest  
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
       - grafana-storage:/var/lib/grafana
 
 volumes:
+  database-data:
   prometheus_data:
   grafana-storage:

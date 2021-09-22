@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -21,10 +22,23 @@ type Transaction struct {
 	Code        string
 	Error       string
 	ImportTags  string
+	Events      string
 }
 
 func NewSqliteStorage() (Provider, error) {
 	db, err := gorm.Open(sqlite.Open("flow.db"), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
+	err = db.AutoMigrate(&Transaction{})
+	if err != nil {
+		return nil, err
+	}
+	return &Storage{db}, nil
+}
+
+func NewPostgresStorage(dsn string) (Provider, error) {
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}

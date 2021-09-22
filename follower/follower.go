@@ -95,12 +95,20 @@ func (f *Follower) processBlock(ctx context.Context, block *flow.Block) error {
 			}
 			dbAuthorizer := strings.Join(authAddressList, ",")
 
+			var eventList []string
+			for _, event := range txRes.Events {
+				RegisterEventMetrics(event.Type)
+				eventList = append(eventList, event.Type)
+			}
+			dbEvents := strings.Join(eventList, ",")
+
 			f.storage.Save(&storage.Transaction{
 				Authorizers: dbAuthorizer,
 				Tx:          txID.String(),
 				Code:        string(tx.Script),
 				Error:       txError,
 				ImportTags:  dbImportTags,
+				Events:      dbEvents,
 			})
 
 		}

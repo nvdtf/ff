@@ -12,23 +12,25 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// TODO LIST
-// ---------
-//
-//
-// - fix client: rpc error: code = ResourceExhausted desc = grpc: received message larger than max (7902438 vs. 4194304)
-// - accessible postgres database
-// - event listener (from tx list) + metrics
+const (
+	maxMsgSize = 1024 * 1024 * 16
+	mainnetURL = "access.mainnet.nodes.onflow.org:9000"
+
+	postgresDSN = "host=db user=ff password=notsecure!notsecure!notsecure dbname=ff port=5432"
+)
 
 func main() {
 	ctx := context.Background()
 
-	storage, err := storage.NewSqliteStorage()
+	storage, err := storage.NewPostgresStorage(postgresDSN)
 	if err != nil {
 		panic(err)
 	}
 
-	client, err := flowClient.New("access.mainnet.nodes.onflow.org:9000", grpc.WithInsecure())
+	client, err := flowClient.New(
+		mainnetURL,
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)),
+		grpc.WithInsecure())
 	if err != nil {
 		panic(err)
 	}
