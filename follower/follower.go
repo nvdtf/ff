@@ -3,16 +3,22 @@ package follower
 import (
 	"context"
 	"fmt"
-	"strings"
 	"tehranifar/fflow/storage"
 	"time"
 
+	publisher "tehranifar/fflow/publisher"
+
+	"cloud.google.com/go/pubsub"
 	"github.com/onflow/flow-go-sdk"
 	flowClient "github.com/onflow/flow-go-sdk/client"
 )
 
 const blockTime = 3 * time.Second
 const retryInterval = 1 * time.Second
+
+var (
+	topic *pubsub.Topic
+)
 
 type Follower struct {
 	ctx     context.Context
@@ -63,53 +69,57 @@ func (f *Follower) processBlock(ctx context.Context, block *flow.Block) error {
 			return err
 		}
 		for _, txID := range col.TransactionIDs {
-			txRes, err := f.client.GetTransactionResult(ctx, txID)
-			if err != nil {
-				return err
-			}
+			fmt.Println("processign %s", txID)
+			// txRes, err := f.client.GetTransactionResult(ctx, txID)
+			// if err != nil {
+			// 	return err
+			// }
 
-			tx, err := f.client.GetTransaction(ctx, txID)
-			if err != nil {
-				return err
-			}
+			// fmt.Println(fmt.Sprintf("processing txID res: %s !!!!!!!!", txRes))
 
-			txError := ""
-			failed := false
-			if txRes.Error != nil {
-				txError = txRes.Error.Error()
-				failed = true
-			}
+			// tx, err := f.client.GetTransaction(ctx, txID)
+			// if err != nil {
+			// 	return err
+			// }
 
-			var tagList []string
-			CadenceImports := GetImports(string(tx.Script))
-			for _, imp := range CadenceImports {
-				RegisterImportMetrics(imp, failed)
-				tagList = append(tagList, imp.Contract)
-				tagList = append(tagList, imp.Address)
-			}
-			dbImportTags := strings.Join(tagList, ",")
+			// txError := ""
+			// failed := false
+			// if txRes.Error != nil {
+			// 	txError = txRes.Error.Error()
+			// 	failed = true
+			// }
 
-			var authAddressList []string
-			for _, auth := range tx.Authorizers {
-				authAddressList = append(authAddressList, auth.String())
-			}
-			dbAuthorizer := strings.Join(authAddressList, ",")
+			// var tagList []string
+			// CadenceImports := GetImports(string(tx.Script))
+			// for _, imp := range CadenceImports {
+			// 	RegisterImportMetrics(imp, failed)
+			// 	tagList = append(tagList, imp.Contract)
+			// 	tagList = append(tagList, imp.Address)
+			// }
+			// dbImportTags := strings.Join(tagList, ",")
 
-			var eventList []string
-			for _, event := range txRes.Events {
-				RegisterEventMetrics(event.Type)
-				eventList = append(eventList, event.Type)
-			}
-			dbEvents := strings.Join(eventList, ",")
+			// var authAddressList []string
+			// for _, auth := range tx.Authorizers {
+			// 	authAddressList = append(authAddressList, auth.String())
+			// }
+			// dbAuthorizer := strings.Join(authAddressList, ",")
 
-			f.storage.Save(&storage.Transaction{
-				Authorizers: dbAuthorizer,
-				Tx:          txID.String(),
-				Code:        string(tx.Script),
-				Error:       txError,
-				ImportTags:  dbImportTags,
-				Events:      dbEvents,
-			})
+			// var eventList []string
+			// for _, event := range txRes.Events {
+			// 	RegisterEventMetrics(event.Type)
+			// 	eventList = append(eventList, event.Type)
+			// }
+			// dbEvents := strings.Join(eventList, ",")
+
+			// f.storage.Save(&storage.Transaction{
+			// 	Authorizers: dbAuthorizer,
+			// 	Tx:          txID.String(),
+			// 	Code:        string(tx.Script),
+			// 	Error:       txError,
+			// 	ImportTags:  dbImportTags,
+			// 	Events:      dbEvents,
+			// })
+			publisher.Publish()
 
 		}
 	}
