@@ -1,6 +1,9 @@
 package storage
 
 import (
+	"fmt"
+	"time"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -8,6 +11,7 @@ import (
 
 type Provider interface {
 	Save(tx *Transaction) error
+	EnableAutoCleanup(interval time.Duration, maxAge time.Duration)
 }
 
 type Storage struct {
@@ -51,4 +55,18 @@ func NewPostgresStorage(dsn string) (Provider, error) {
 
 func (s *Storage) Save(tx *Transaction) error {
 	return s.db.Create(tx).Error
+}
+
+func (s *Storage) EnableAutoCleanup(interval time.Duration, maxAge time.Duration) {
+	go func() {
+		for {
+			err := s.db.Unscoped().Delete(&Transaction{},
+				"now()-created_at > ?",
+				maxAge).Error
+			if err != nil {
+				fmt.Printf("Cleanup failed: %s\n", err)
+			}
+			time.Sleep(interval)
+		}
+	}()
 }
