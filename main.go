@@ -15,7 +15,7 @@ import (
 
 const (
 	databaseCleanupInterval = 1 * time.Hour
-	databaseTxMaxAge        = 7 * 24 * time.Hour
+	databaseTxMaxAge        = 3 * 24 * time.Hour
 
 	maxMsgSize = 1024 * 1024 * 16
 	mainnetURL = "access.mainnet.nodes.onflow.org:9000"
